@@ -1,0 +1,15 @@
+%text = (
+    name     => '股價擷取程式',
+    desc     => '擷取Yahoo股市所提供股價資料供個人投資參考',
+    greeting => '歡迎使用',
+    analyze  => '分析',
+    exec     => '執行',
+    ing      => '中',
+    done     => '完畢',
+    exit     => '離開',
+    about    => '關於',
+    file     => '檔案',
+    option   => '選項',
+    help     => '輔助說明',
+    setup    => '偏好設定',
+);
