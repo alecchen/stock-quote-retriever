@@ -1,4 +1,5 @@
 %text = (
+    encoding => 'big5',
     name     => '股價擷取程式',
     desc     => '擷取Yahoo股市所提供股價資料供個人投資參考',
     greeting => '歡迎使用',
@@ -12,5 +13,8 @@
     option   => '選項',
     help     => '輔助說明',
     setup    => '偏好設定',
+    retrieve => '擷取',
+    input    => '輸入',
+    output   => '輸出',
     label    => '股票代號 股票名稱 資料日期 時間 成交 買進 賣出 漲跌 張數 昨收 開盤 最高 最低',
 );

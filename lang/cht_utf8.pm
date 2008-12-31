@@ -1,4 +1,5 @@
-%text = (
+﻿%text = (
+    encoding => 'utf8',
     name     => '股價擷取程式',
     desc     => '擷取Yahoo股市所提供股價資料供個人投資參考',
     greeting => '歡迎使用',

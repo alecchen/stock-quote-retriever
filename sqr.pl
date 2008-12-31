@@ -8,22 +8,21 @@ use Wx::Event qw(:everything);
 use base 'Wx::Frame';
 
 use Mouse;
+use threads;
 use Yahoo::TW::Stock;
 use Spreadsheet::ParseExcel;
-use threads;
 use Smart::Comments;
 use IO::All;
 
 use version; our $VERSION = qv('0.0.1');
 
-my $encoding = 'utf8';
-require 'lang/cht_utf8.pm';
+our %text;
+$ENV{OS} eq 'Windows_NT' ? require 'lang/cht_big5.pm' : require 'lang/cht_utf8.pm';
+my $encoding = $text{encoding};
 
 has 'input'   => ( is => 'rw', isa => 'Str' );
 has 'output'  => ( is => 'rw', isa => 'Str' );
 has 'id_list' => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
-
-our %text;
 
 sub new {
     my ($class, %args) = @_;
@@ -90,7 +89,7 @@ sub new {
     Wx::LogMessage(sprintf "%s%s%s!", $text{greeting}, $text{name}, $VERSION->normal);
 
     # temp
-    $self->input('data/stock.xls');
+    $self->input('data/bobson_stock.xls');
     $self->output('data/stock.txt');
 
 
@@ -104,13 +103,24 @@ sub on_run {
     Wx::LogMessage("%s = %s", $text{input}, $self->input);
     Wx::LogMessage("$text{analyze}Excel...");
 
-    my $thr = threads->create( sub { 
-        $self->parse_excel;
-        $self->retrieve_quote;
-    } );
+	my $thr = threads->create( sub { 
+		$self->parse_excel;
+		$self->retrieve_quote;
+	} );
 
-    # a better way for progress message? 
-    $thr->join;
+	if ( $ENV{OS} ne 'Windows_NT' ) {
+		$thr->join;
+	}
+
+	# <Problem>
+	# ubuntu:
+	# 1. without use threads, it will get stuck until parse and retrieve finished
+	# 2. use threads and join will get the same result
+	# 3. use threads but not join sometimes can't show full message on log window
+
+	# windows:
+	# 1. looks fine even without threads, but can't move window when exec
+	# 2. use threads and join will hang up
 
     return;
 }
@@ -122,11 +132,14 @@ sub retrieve_quote {
     "$text{label}\n" >> io($output);
     Wx::LogMessage($text{label});
 
-    my $agent = Yahoo::TW::Stock->new( encoding => 'utf8' );
+    my $agent = Yahoo::TW::Stock->new( encoding => $encoding );
+    my @id_list = @{$self->id_list};
+	### @id_list
 
-    foreach my $id (@{$self->id_list}) {
+    foreach my $id (@id_list) {
         my @data = $agent->fetch($id);
-        my $data = join q{ }, @data;
+		# use sprintf for format command instead
+		my $data = join q{ }, @data;
         "$data\n" >> io($output);
         Wx::LogMessage($data);
     }
