@@ -12,9 +12,11 @@
     file     => '檔案',
     option   => '選項',
     help     => '輔助說明',
-    setup    => '偏好設定',
+    setup    => '設定',
     retrieve => '擷取',
     input    => '輸入',
     output   => '輸出',
     label    => '股票代號 股票名稱 資料日期 時間 成交 買進 賣出 漲跌 張數 昨收 開盤 最高 最低',
+    user     => '使用者',
+    cancel   => '取消',
 );

@@ -3,10 +3,10 @@ use Mouse;
 use Encode qw(encode decode from_to);
 use WWW::Mechanize;
 use HTML::TableExtract;
-use Smart::Comments;
 use IO::All;
-use Data::TreeDumper;
-use Rubyish::Attribute;
+#use Smart::Comments;
+#use Data::TreeDumper;
+#use Rubyish::Attribute;
 
 use version; our $VERSION = qv('0.0.1');
 

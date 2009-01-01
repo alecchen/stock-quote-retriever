@@ -11,7 +11,7 @@ use Mouse;
 use threads;
 use Yahoo::TW::Stock;
 use Spreadsheet::ParseExcel;
-use Smart::Comments;
+#use Smart::Comments;
 use IO::All;
 use Config::General;
 
