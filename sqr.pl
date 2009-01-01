@@ -13,15 +13,20 @@ use Yahoo::TW::Stock;
 use Spreadsheet::ParseExcel;
 use Smart::Comments;
 use IO::All;
+use Config::General;
 
 use version; our $VERSION = qv('0.0.1');
 
 our %text;
-$ENV{OS} eq 'Windows_NT' ? require 'lang/cht_big5.pm' : require 'lang/cht_utf8.pm';
+my $os = $ENV{OS};
+$os eq 'Windows_NT' ? require 'lang/cht_big5.pm' : require 'lang/cht_utf8.pm';
 my $encoding = $text{encoding};
 
 has 'input'   => ( is => 'rw', isa => 'Str' );
 has 'output'  => ( is => 'rw', isa => 'Str' );
+has 'config'  => ( is => 'rw', isa => 'Str' );
+has 'previous_file'      => ( is => 'rw', isa => 'Str' );
+has 'previous_directory' => ( is => 'rw', isa => 'Str' );
 has 'id_list' => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
 
 sub new {
@@ -42,20 +47,24 @@ sub new {
     my $file = Wx::Menu->new;
     $file->Append( wxID_EXIT, "$text{exit}(&E)" );
 
-    my $option = Wx::Menu->new;
-    $option->Append( wxID_SETUP, "$text{setup}(&S)" );
+	my $wxID_SETUP_INPUT  = 100;
+	my $wxID_SETUP_OUTPUT = 101;
+    my $setup = Wx::Menu->new;
+    $setup->Append( $wxID_SETUP_INPUT,  "$text{input}(&I)" );
+    $setup->Append( $wxID_SETUP_OUTPUT, "$text{output}(&O)" );
 
     my $help = Wx::Menu->new;
     $help->Append( wxID_ABOUT, "$text{about}(&A)" );
 
     $menubar->Append( $file,   "$text{file}(&F)" );
-    $menubar->Append( $option, "$text{option}(&O)" );
+    $menubar->Append( $setup,  "$text{setup}(&S)" );
     $menubar->Append( $help,   "$text{help}(&H)" );
 
     $self->SetMenuBar( $menubar );
 
     EVT_MENU( $self, wxID_ABOUT, \&on_about );
-    #EVT_MENU( $self, wxID_SETUP, \&on_setup );
+    EVT_MENU( $self, $wxID_SETUP_INPUT,  \&on_setup_input  );
+    EVT_MENU( $self, $wxID_SETUP_OUTPUT, \&on_setup_output );
     EVT_MENU( $self, wxID_EXIT, sub { $self->Close } );
 
     # split window
@@ -88,19 +97,96 @@ sub new {
     $self->SetIcon( Wx::GetWxPerlIcon() );
     Wx::LogMessage(sprintf "%s%s%s!", $text{greeting}, $text{name}, $VERSION->normal);
 
-    # temp
-    $self->input('data/bobson_stock.xls');
-    $self->output('data/stock.txt');
+	$self->config('sqr.cfg');
 
+	if (! -e $self->config) {
+		q{} > io($self->config); # create a empty file
+		$self->on_setup_input;
+		$self->on_setup_output;
+	}
+	else {
+		# read config
+		my $config = Config::General->new($self->config);
+		my %config = $config->getall;
+		$self->input($config{input});
+		$self->output($config{output});
+	}
 
     return $self;
 }
+
+#---------------------------------------------------------------------------
+#  setup
+#---------------------------------------------------------------------------
+
+sub on_setup_input {
+	my $self = shift;
+
+    my $dialog = Wx::FileDialog->new(
+		$self, "$text{input}$text{setup}", $self->previous_directory || q{},
+        $self->previous_file || q{},
+        'Microsoft Excel files (*.xls)|*.xls|All files (*.*)|*.*',
+        wxFD_OPEN|wxFD_FILE_MUST_EXIST );
+
+    if( $dialog->ShowModal != wxID_CANCEL ) {
+        my $path = $dialog->GetPath;
+
+        if( $path ) {
+			Wx::LogMessage("$text{input}$text{setup}");
+			Wx::LogMessage("$path");
+			$self->input($path);
+
+			my $config = Config::General->new($self->config);
+			my %config = $config->getall;
+			$config{input} = $self->input;
+			$config->save_file($self->config, \%config);
+        }
+
+        $self->previous_directory( $dialog->GetDirectory );
+    }
+
+    $dialog->Destroy;
+}
+
+sub on_setup_output {
+	my $self = shift;
+
+    my $dialog = Wx::FileDialog->new(
+		$self, "$text{output}$text{setup}", $self->previous_directory || q{},
+        $self->previous_file || q{},
+        'Plain text files (*.txt)|*.txt|All files (*.*)|*.*',
+        wxFD_OPEN );
+
+    if( $dialog->ShowModal != wxID_CANCEL ) {
+        my $path = $dialog->GetPath;
+
+        if( $path ) {
+			Wx::LogMessage("$text{output}$text{setup}");
+			Wx::LogMessage("$path");
+			$self->output($path);
+
+			my $config = Config::General->new($self->config);
+			my %config = $config->getall;
+			$config{output} = $self->output;
+			$config->save_file($self->config, \%config);
+        }
+
+        $self->previous_directory( $dialog->GetDirectory );
+    }
+
+    $dialog->Destroy;
+}
+
+#---------------------------------------------------------------------------
+#  exec
+#---------------------------------------------------------------------------
 
 sub on_run {
     my $self = shift;
 
     Wx::LogMessage("$text{exec}$text{ing}...");
-    Wx::LogMessage("%s = %s", $text{input}, $self->input);
+    Wx::LogMessage($text{input});
+    Wx::LogMessage($self->input);
     Wx::LogMessage("$text{analyze}Excel...");
 
 	my $thr = threads->create( sub { 
@@ -140,11 +226,13 @@ sub retrieve_quote {
         my @data = $agent->fetch($id);
 		# use sprintf for format command instead
 		my $data = join q{ }, @data;
+		### $data
         "$data\n" >> io($output);
         Wx::LogMessage($data);
     }
 
-    Wx::LogMessage("%s = %s", $text{output}, $self->output);
+    Wx::LogMessage($text{output});
+    Wx::LogMessage($self->output);
     Wx::LogMessage("$text{retrieve}$text{done}!");
 }
 
@@ -170,6 +258,10 @@ sub parse_excel {
     $self->id_list(\@id_list);
     Wx::LogMessage("$text{analyze}$text{done}!");
 }
+
+#---------------------------------------------------------------------------
+#  misc
+#---------------------------------------------------------------------------
 
 sub on_about {   
     my $self = shift;

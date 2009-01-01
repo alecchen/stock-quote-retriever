@@ -37,7 +37,8 @@ sub fetch {
     $mech->get("http://tw.stock.yahoo.com/q/bc?s=$id");
     my $title = $mech->title;
 	my ($name) = $title =~ /^([^(]+)/;
-    from_to($name, 'big5', 'utf8') if $self->encoding eq 'utf8';
+	$name = $self->encoding eq 'utf8' ? encode('utf8', $name) : encode('big5', $name);
+	# it's ok on windows, needs to test on ubuntu
 
     return ($id, $name, $date, @values[1..10]);
 }
