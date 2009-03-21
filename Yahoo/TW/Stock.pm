@@ -8,7 +8,7 @@ use IO::All;
 #use Data::TreeDumper;
 #use Rubyish::Attribute;
 
-use version; our $VERSION = qv('0.0.1');
+use version; our $VERSION = qv('0.0.2');
 
 has 'encoding' => ( is => 'rw', isa => 'Str', default => 'big5' );
 
@@ -27,10 +27,10 @@ sub fetch {
 	$te->parse($content);
 
 	my @tables = $te->tables;
-	my $date = [split /\s+/, $tables[4]->rows->[0]->[1]]->[1];
+	my $date = [split /\s+/, $tables[3]->rows->[0]->[1]]->[1];
 
     # raw data
-	my @values = @{ $tables[5]->rows->[1] }[0..10];
+	my @values = @{ $tables[4]->rows->[1] }[0..10];
 	$values[5] = sprintf "%2f", $values[2] - $values[7];
 
     # name

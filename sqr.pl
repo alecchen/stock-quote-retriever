@@ -15,7 +15,7 @@ use Spreadsheet::ParseExcel;
 use IO::All;
 use Config::General;
 
-use version; our $VERSION = qv('0.0.1');
+use version; our $VERSION = qv('0.0.2');
 
 our %text;
 my $os = $ENV{OS};
@@ -85,8 +85,8 @@ sub new {
     my $panel = Wx::Panel->new($split, -1);
 
     # buttons
-    my $run_btn  = Wx::Button->new( $panel, -1, $text{exec}, [520,5] );
-    my $exit_btn = Wx::Button->new( $panel, -1, $text{exit}, [610,5] );
+    my $run_btn  = Wx::Button->new( $panel, -1, $text{exec}, [500,5] );
+    my $exit_btn = Wx::Button->new( $panel, -1, $text{exit}, [590,5] );
 
     EVT_BUTTON( $self, $run_btn,  \&on_run);
     EVT_BUTTON( $self, $exit_btn, sub { $self->Close() } );
